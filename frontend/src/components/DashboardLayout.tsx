@@ -27,8 +27,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   return (
     <div className="flex min-h-screen bg-bg-main text-text-primary">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border-card bg-bg-card/50 backdrop-blur-md flex flex-col justify-between hidden md:flex">
-        <div>
+      <aside className="w-64 h-screen sticky top-0 border-r border-border-card bg-bg-card/50 backdrop-blur-md flex flex-col justify-between hidden md:flex overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           {/* Logo */}
           <div className="p-6 border-b border-border-card flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-accent to-accent-hover flex items-center justify-center font-bold text-lg text-white">
@@ -39,7 +39,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <span className="text-[10px] text-text-muted uppercase font-bold tracking-widest">AI Productivity</span>
             </div>
           </div>
-
+ 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
@@ -47,13 +47,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               const isActive = activeTab === item.id;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                   key={item.id}
+                   onClick={() => setActiveTab(item.id)}
+                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-accent/15 text-accent-hover border border-accent/30'
-                      : 'text-text-secondary hover:bg-border-card/30 hover:text-text-primary border border-transparent'
-                  }`}
+                       ? 'bg-accent/15 text-accent-hover border border-accent/30'
+                       : 'text-text-secondary hover:bg-border-card/30 hover:text-text-primary border border-transparent'
+                   }`}
                 >
                   <Icon className="w-4.5 h-4.5" />
                   {item.label}
@@ -62,9 +62,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             })}
           </nav>
         </div>
-
+ 
         {/* User profile details & connection status */}
-        <div className="p-4 border-t border-border-card bg-bg-main/30 space-y-4">
+        <div className="p-4 border-t border-border-card bg-bg-main/30 space-y-4 shrink-0">
           {user && (
             <div className="flex items-center gap-3 px-2">
               <img
