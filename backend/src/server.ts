@@ -10,7 +10,9 @@ import {
   fetchRepositories,
   fetchCommitStats,
   fetchPRStats,
-  isDemoToken
+  isDemoToken,
+  fetchIssueStats,
+  fetchChurnStats
 } from './services/githubService.js';
 import { db } from './services/mockDb.js';
 import { generateInsights } from './services/aiService.js';
@@ -109,6 +111,8 @@ app.get('/api/metrics', async (req, res) => {
         repos: db.getRepos(),
         commitStats: db.getCommitStats(),
         prStats: db.getPRStats(),
+        issueStats: db.getIssueStats(),
+        churnStats: db.getChurnStats(),
         dailyCommits: db.getDailyCommits(),
         activeHours: db.getActiveHours(),
         activityFeed: db.getActivityFeed()
@@ -118,11 +122,13 @@ app.get('/api/metrics', async (req, res) => {
 
     // In Live Mode, fetch active GitHub data
     console.log(`Live Mode: Fetching metrics for @${user.login}...`);
-    const [repos, commitStats, prStats] = await Promise.all([
+    const [repos, commitStats, prStats, issueStats] = await Promise.all([
       fetchRepositories(token),
       fetchCommitStats(token, user.login),
-      fetchPRStats(token, user.login)
+      fetchPRStats(token, user.login),
+      fetchIssueStats(token, user.login)
     ]);
+    const churnStats = await fetchChurnStats(token, commitStats.total_commits);
 
     // Construct daily commits and active hours based on real repo lists for graphs
     const dailyCommits = [
@@ -150,6 +156,8 @@ app.get('/api/metrics', async (req, res) => {
       repos,
       commitStats,
       prStats,
+      issueStats,
+      churnStats,
       dailyCommits,
       activeHours,
       activityFeed: [] // In live mode, feed is updated on webhook (optional) or mock placeholder

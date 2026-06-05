@@ -8,7 +8,7 @@ import { ChartsContainer } from './ChartsContainer.js';
 import { InsightsPanel } from './InsightsPanel.js';
 import { ActivityFeed } from './ActivityFeed.js';
 import { DemoConsole } from './DemoConsole.js';
-import { Terminal, Code, Star, ExternalLink, RefreshCw, AlertCircle, FileText } from 'lucide-react';
+import { Terminal, Code, Star, ExternalLink, RefreshCw, AlertCircle, FileText, GitFork } from 'lucide-react';
 
 export const Dashboard = () => {
   const { token, isDemo } = useAuthStore();
@@ -23,6 +23,8 @@ export const Dashboard = () => {
     activeHours,
     activityFeed,
     insights,
+    issueStats,
+    churnStats,
     fetchMetrics,
     fetchInsights,
     regenerateInsights,
@@ -138,6 +140,8 @@ export const Dashboard = () => {
           <MetricsOverview
             commitStats={commitStats}
             prStats={prStats}
+            issueStats={issueStats}
+            churnStats={churnStats}
             reposCount={repos.length}
             starsCount={totalStars}
           />
@@ -150,6 +154,7 @@ export const Dashboard = () => {
                 activeHours={activeHours}
                 prStats={prStats}
                 repos={repos}
+                churnStats={churnStats}
               />
               <InsightsPanel
                 insights={insights}
@@ -201,20 +206,32 @@ export const Dashboard = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-border-card pt-4.5 mt-4 text-xs font-semibold">
-                  <span className="flex items-center gap-1 text-warning-amber">
-                    <Star className="w-4 h-4 fill-warning-amber/10" />
-                    {repo.stargazers_count} stars
-                  </span>
+                <div className="flex items-center justify-between border-t border-border-card pt-3 mt-4 text-[10px] text-text-secondary font-semibold">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1 text-warning-amber">
+                      <Star className="w-3.5 h-3.5 fill-warning-amber/10" />
+                      {repo.stargazers_count}
+                    </span>
+                    <span className="flex items-center gap-1 text-indigo-400">
+                      <GitFork className="w-3.5 h-3.5" />
+                      {repo.forks_count ?? 0}
+                    </span>
+                    {repo.open_issues_count !== undefined && repo.open_issues_count > 0 && (
+                      <span className="flex items-center gap-1 text-rose-400">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {repo.open_issues_count}
+                      </span>
+                    )}
+                  </div>
                   
                   <a
                     href={repo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-text-secondary hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-xs text-text-secondary hover:text-white transition-colors"
                   >
-                    View Project
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    View
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
               </div>

@@ -17,6 +17,14 @@ interface MetricsStore {
     merged: number;
     closed: number;
   } | null;
+  issueStats: {
+    open: number;
+    closed: number;
+  } | null;
+  churnStats: {
+    additions: number;
+    deletions: number;
+  } | null;
   dailyCommits: { day: string; commits: number }[];
   activeHours: { hour: string; commits: number }[];
   activityFeed: any[];
@@ -36,6 +44,8 @@ export const useMetricsStore = create<MetricsStore>((set, get) => ({
   repos: [],
   commitStats: null,
   prStats: null,
+  issueStats: null,
+  churnStats: null,
   dailyCommits: [],
   activeHours: [],
   activityFeed: [],
@@ -47,11 +57,13 @@ export const useMetricsStore = create<MetricsStore>((set, get) => ({
       const response = await axios.get(`${BACKEND_URL}/api/metrics`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const { repos, commitStats, prStats, dailyCommits, activeHours, activityFeed } = response.data;
+      const { repos, commitStats, prStats, issueStats, churnStats, dailyCommits, activeHours, activityFeed } = response.data;
       set({
         repos,
         commitStats,
         prStats,
+        issueStats,
+        churnStats,
         dailyCommits,
         activeHours,
         activityFeed,
@@ -105,6 +117,8 @@ export const useMetricsStore = create<MetricsStore>((set, get) => ({
     set({
       commitStats: data.commitStats ?? get().commitStats,
       prStats: data.prStats ?? get().prStats,
+      issueStats: data.issueStats ?? get().issueStats,
+      churnStats: data.churnStats ?? get().churnStats,
       dailyCommits: data.dailyCommits ?? get().dailyCommits,
       activeHours: data.activeHours ?? get().activeHours,
       repos: data.repos ?? get().repos,

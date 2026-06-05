@@ -43,13 +43,18 @@ interface ChartsContainerProps {
   activeHours: ActiveHour[];
   prStats: PRStats | null;
   repos: Repository[];
+  churnStats: {
+    additions: number;
+    deletions: number;
+  } | null;
 }
 
 export const ChartsContainer: React.FC<ChartsContainerProps> = ({
   dailyCommits,
   activeHours,
   prStats,
-  repos
+  repos,
+  churnStats
 }) => {
   // 1. Process Language Distribution
   const languageCounts: { [key: string]: number } = {};
@@ -116,6 +121,25 @@ export const ChartsContainer: React.FC<ChartsContainerProps> = ({
             </AreaChart>
           </ResponsiveContainer>
         </div>
+        {churnStats && (
+          <div className="flex items-center justify-between border-t border-border-card pt-3 text-xs text-text-secondary">
+            <span>Code Churn Balance:</span>
+            <div className="flex items-center gap-2.5 w-2/3">
+              <span className="font-mono text-success-green">+{churnStats.additions}</span>
+              <div className="flex-1 h-1.5 rounded bg-border-card overflow-hidden flex">
+                <div 
+                  className="bg-success-green" 
+                  style={{ width: `${(churnStats.additions / (churnStats.additions + churnStats.deletions || 1)) * 100}%` }}
+                ></div>
+                <div 
+                  className="bg-danger-red" 
+                  style={{ width: `${(churnStats.deletions / (churnStats.additions + churnStats.deletions || 1)) * 100}%` }}
+                ></div>
+              </div>
+              <span className="font-mono text-danger-red">-{churnStats.deletions}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Language Composition Card */}

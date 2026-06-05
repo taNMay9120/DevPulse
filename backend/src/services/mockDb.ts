@@ -34,6 +34,8 @@ export class MockDatabase {
   private dailyCommits: ChartData[] = [];
   private activeHours: ActiveHourData[] = [];
   private insights: string[] = [];
+  private issues = { open: 4, closed: 12 };
+  private churn = { additions: 2450, deletions: 890 };
 
   constructor() {
     this.resetDemoData();
@@ -79,11 +81,21 @@ export class MockDatabase {
     this.insights = insights;
   }
 
+  public getIssueStats() {
+    return this.issues;
+  }
+
+  public getChurnStats() {
+    return this.churn;
+  }
+
   public addCommit(repoName: string, additions: number, deletions: number, message: string) {
     // Increment stats
     this.commits.total_commits += 1;
     this.commits.commits_this_week += 1;
     this.commits.commits_this_month += 1;
+    this.churn.additions += additions;
+    this.churn.deletions += deletions;
 
     // Increment commits count on specific repo
     const repo = this.repos.find(r => r.name === repoName);
@@ -127,7 +139,7 @@ export class MockDatabase {
       this.activityFeed.pop();
     }
 
-    return { commitStats: this.commits, dailyCommits: this.dailyCommits, activeHours: this.activeHours, activity };
+    return { commitStats: this.commits, dailyCommits: this.dailyCommits, activeHours: this.activeHours, churnStats: this.churn, activity };
   }
 
   public openPR(repoName: string, title: string) {
@@ -170,6 +182,7 @@ export class MockDatabase {
   }
 
   public openIssue(repoName: string, title: string) {
+    this.issues.open += 1;
     const issueNumber = Math.floor(Math.random() * 500) + 1;
     const activity: ActivityLog = {
       id: `act_${Math.random().toString(36).substring(2, 11)}`,
@@ -182,10 +195,14 @@ export class MockDatabase {
     };
     this.activityFeed.unshift(activity);
 
-    return { activity };
+    return { issueStats: this.issues, activity };
   }
 
   public resolveIssue(repoName: string, title: string) {
+    if (this.issues.open > 0) {
+      this.issues.open -= 1;
+    }
+    this.issues.closed += 1;
     const issueNumber = Math.floor(Math.random() * 500) + 1;
     const activity: ActivityLog = {
       id: `act_${Math.random().toString(36).substring(2, 11)}`,
@@ -198,7 +215,7 @@ export class MockDatabase {
     };
     this.activityFeed.unshift(activity);
 
-    return { activity };
+    return { issueStats: this.issues, activity };
   }
 
   public resetDemoData() {
@@ -210,13 +227,16 @@ export class MockDatabase {
     };
 
     this.repos = [
-      { name: 'pulse-dashboard', url: 'https://github.com/demo-coder/pulse-dashboard', description: 'Next-gen dev efficiency trackers and metrics visualization tools.', stargazers_count: 142, language: 'TypeScript', commits_count: 54 },
-      { name: 'ai-insights-engine', url: 'https://github.com/demo-coder/ai-insights-engine', description: 'LLM heuristics module parsing commit diffs into productivity insights.', stargazers_count: 98, language: 'Python', commits_count: 38 },
-      { name: 'react-canvas-charts', url: 'https://github.com/demo-coder/react-canvas-charts', description: 'Super lightweight interactive graphing wrapper for React canvas components.', stargazers_count: 73, language: 'TypeScript', commits_count: 22 },
-      { name: 'express-socket-stream', url: 'https://github.com/demo-coder/express-socket-stream', description: 'Middleware connecting express route updates to socket listeners automatically.', stargazers_count: 45, language: 'JavaScript', commits_count: 18 },
-      { name: 'config-dotfiles', url: 'https://github.com/demo-coder/config-dotfiles', description: 'Neovim + tmux + zsh dev configuration suite.', stargazers_count: 28, language: 'Shell', commits_count: 12 },
-      { name: 'rust-crypto-hasher', url: 'https://github.com/demo-coder/rust-crypto-hasher', description: 'Blazing fast custom hashing engine written in Rust.', stargazers_count: 19, language: 'Rust', commits_count: 5 }
+      { name: 'pulse-dashboard', url: 'https://github.com/demo-coder/pulse-dashboard', description: 'Next-gen dev efficiency trackers and metrics visualization tools.', stargazers_count: 142, language: 'TypeScript', commits_count: 54, forks_count: 24, open_issues_count: 3 },
+      { name: 'ai-insights-engine', url: 'https://github.com/demo-coder/ai-insights-engine', description: 'LLM heuristics module parsing commit diffs into productivity insights.', stargazers_count: 98, language: 'Python', commits_count: 38, forks_count: 12, open_issues_count: 1 },
+      { name: 'react-canvas-charts', url: 'https://github.com/demo-coder/react-canvas-charts', description: 'Super lightweight interactive graphing wrapper for React canvas components.', stargazers_count: 73, language: 'TypeScript', commits_count: 22, forks_count: 8, open_issues_count: 0 },
+      { name: 'express-socket-stream', url: 'https://github.com/demo-coder/express-socket-stream', description: 'Middleware connecting express route updates to socket listeners automatically.', stargazers_count: 45, language: 'JavaScript', commits_count: 18, forks_count: 4, open_issues_count: 2 },
+      { name: 'config-dotfiles', url: 'https://github.com/demo-coder/config-dotfiles', description: 'Neovim + tmux + zsh dev configuration suite.', stargazers_count: 28, language: 'Shell', commits_count: 12, forks_count: 15, open_issues_count: 0 },
+      { name: 'rust-crypto-hasher', url: 'https://github.com/demo-coder/rust-crypto-hasher', description: 'Blazing fast custom hashing engine written in Rust.', stargazers_count: 19, language: 'Rust', commits_count: 5, forks_count: 2, open_issues_count: 1 }
     ];
+
+    this.issues = { open: 4, closed: 12 };
+    this.churn = { additions: 2450, deletions: 890 };
 
     this.commits = {
       total_commits: 149,

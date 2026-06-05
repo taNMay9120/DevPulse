@@ -61,6 +61,8 @@ export const initSocket = (server: HTTPServer) => {
         io?.emit('metrics-update', {
           commitStats: db.getCommitStats(),
           prStats: db.getPRStats(),
+          issueStats: db.getIssueStats(),
+          churnStats: db.getChurnStats(),
           dailyCommits: db.getDailyCommits(),
           activeHours: db.getActiveHours(),
           repos: db.getRepos(),
