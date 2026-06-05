@@ -23,6 +23,8 @@ export interface CommitStats {
   total_commits: number;
   commits_this_week: number;
   commits_this_month: number;
+  dailyCommits?: { day: string; commits: number }[];
+  activeHours?: { hour: string; commits: number }[];
 }
 
 export interface PRStats {
@@ -138,7 +140,7 @@ export const fetchCommitStats = async (token: string, username: string): Promise
       axios.get(`${GITHUB_API_BASE}/search/commits`, {
         params: {
           q: `author:${username} committer-date:>${weekAgo}`,
-          per_page: 1,
+          per_page: 100,
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -162,10 +164,81 @@ export const fetchCommitStats = async (token: string, username: string): Promise
     const commitsThisWeek = weekResponse.data.total_count || 0;
     const commitsThisMonth = monthResponse.data.total_count || 0;
 
+    // Build real daily commits and hourly distributions from retrieved commits list
+    const dailyMap: { [key: string]: number } = {
+      Mon: 0,
+      Tue: 0,
+      Wed: 0,
+      Thu: 0,
+      Fri: 0,
+      Sat: 0,
+      Sun: 0
+    };
+
+    const hourlyMap: { [key: string]: number } = {
+      '08:00': 0,
+      '10:00': 0,
+      '12:00': 0,
+      '14:00': 0,
+      '16:00': 0,
+      '18:00': 0,
+      '20:00': 0
+    };
+
+    const items = weekResponse.data.items || [];
+    for (const item of items) {
+      const dateStr = item.commit?.author?.date || item.commit?.committer?.date;
+      if (dateStr) {
+        const date = new Date(dateStr);
+        
+        // 1. Map to Day
+        const dayIndex = date.getDay();
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = dayNames[dayIndex];
+        if (dayName in dailyMap) {
+          dailyMap[dayName]++;
+        }
+
+        // 2. Map to Hour slot
+        const hour = date.getHours();
+        let slot = '12:00';
+        if (hour < 9) slot = '08:00';
+        else if (hour < 11) slot = '10:00';
+        else if (hour < 13) slot = '12:00';
+        else if (hour < 15) slot = '14:00';
+        else if (hour < 17) slot = '16:00';
+        else if (hour < 19) slot = '18:00';
+        else slot = '20:00';
+        hourlyMap[slot]++;
+      }
+    }
+
+    const dailyCommits = [
+      { day: 'Mon', commits: dailyMap.Mon },
+      { day: 'Tue', commits: dailyMap.Tue },
+      { day: 'Wed', commits: dailyMap.Wed },
+      { day: 'Thu', commits: dailyMap.Thu },
+      { day: 'Fri', commits: dailyMap.Fri },
+      { day: 'Sat', commits: dailyMap.Sat },
+      { day: 'Sun', commits: dailyMap.Sun }
+    ];
+
+    const activeHours = [
+      { hour: '08:00', commits: hourlyMap['08:00'] },
+      { hour: '10:00', commits: hourlyMap['10:00'] },
+      { hour: '12:00', commits: hourlyMap['12:00'] },
+      { hour: '14:00', commits: hourlyMap['14:00'] },
+      { hour: '16:00', commits: hourlyMap['16:00'] },
+      { hour: '18:00', commits: hourlyMap['18:00'] },
+      { hour: '20:00', commits: hourlyMap['20:00'] }
+    ];
+
     return {
       total_commits: commitsThisMonth,
       commits_this_week: commitsThisWeek,
       commits_this_month: commitsThisMonth,
+      dailyCommits,
+      activeHours
     };
   } catch (error: any) {
     console.error('Error fetching commit stats:', error.message);
@@ -173,6 +246,24 @@ export const fetchCommitStats = async (token: string, username: string): Promise
       total_commits: 0,
       commits_this_week: 0,
       commits_this_month: 0,
+      dailyCommits: [
+        { day: 'Mon', commits: 0 },
+        { day: 'Tue', commits: 0 },
+        { day: 'Wed', commits: 0 },
+        { day: 'Thu', commits: 0 },
+        { day: 'Fri', commits: 0 },
+        { day: 'Sat', commits: 0 },
+        { day: 'Sun', commits: 0 }
+      ],
+      activeHours: [
+        { hour: '08:00', commits: 0 },
+        { hour: '10:00', commits: 0 },
+        { hour: '12:00', commits: 0 },
+        { hour: '14:00', commits: 0 },
+        { hour: '16:00', commits: 0 },
+        { hour: '18:00', commits: 0 },
+        { hour: '20:00', commits: 0 }
+      ]
     };
   }
 };

@@ -131,24 +131,24 @@ app.get('/api/metrics', async (req, res) => {
     const churnStats = await fetchChurnStats(token, commitStats.total_commits);
 
     // Construct daily commits and active hours based on real repo lists for graphs
-    const dailyCommits = [
-      { day: 'Mon', commits: Math.floor(Math.random() * 5) },
-      { day: 'Tue', commits: Math.floor(Math.random() * 8) },
-      { day: 'Wed', commits: Math.floor(Math.random() * 6) + 1 },
-      { day: 'Thu', commits: commitStats.commits_this_week },
-      { day: 'Fri', commits: Math.floor(Math.random() * 4) },
+    const dailyCommits = commitStats.dailyCommits || [
+      { day: 'Mon', commits: 0 },
+      { day: 'Tue', commits: 0 },
+      { day: 'Wed', commits: 0 },
+      { day: 'Thu', commits: 0 },
+      { day: 'Fri', commits: 0 },
       { day: 'Sat', commits: 0 },
       { day: 'Sun', commits: 0 }
     ];
 
-    const activeHours = [
-      { hour: '08:00', commits: 1 },
-      { hour: '10:00', commits: 5 },
-      { hour: '12:00', commits: 2 },
-      { hour: '14:00', commits: 8 },
-      { hour: '16:00', commits: 10 },
-      { hour: '18:00', commits: 4 },
-      { hour: '20:00', commits: 2 }
+    const activeHours = commitStats.activeHours || [
+      { hour: '08:00', commits: 0 },
+      { hour: '10:00', commits: 0 },
+      { hour: '12:00', commits: 0 },
+      { hour: '14:00', commits: 0 },
+      { hour: '16:00', commits: 0 },
+      { hour: '18:00', commits: 0 },
+      { hour: '20:00', commits: 0 }
     ];
 
     res.json({
