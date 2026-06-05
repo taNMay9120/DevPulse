@@ -36,8 +36,8 @@ export const isDemoToken = (token: string): boolean => {
 };
 
 export const exchangeOAuthToken = async (code: string): Promise<string> => {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const clientId = process.env.GITHUB_CLIENT_ID || process.env.VITE_GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.VITE_GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     console.warn('OAuth credentials missing, returning demo-token');
