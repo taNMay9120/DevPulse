@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import axios from 'axios';
 import { CommitStats, PRStats, RepositoryStats } from './githubService.js';
 import { db } from './mockDb.js';
 
@@ -14,25 +15,53 @@ export const generateInsights = async (metrics: MetricsPayload): Promise<string[
   const apiKey = process.env.AI_API_KEY;
   const provider = process.env.AI_PROVIDER || 'openai';
 
+  console.log(`generateInsights: provider=${provider}, hasApiKey=${!!apiKey}`);
+
   if (!apiKey) {
     console.log('AI API Key not configured. Using rule-based fallback heuristics engine.');
     return generateHeuristicInsights(metrics);
   }
 
   try {
-    if (provider === 'openai') {
+    const prompt = `
+      You are a seasoned developer productivity coach. Analyze these GitHub activity metrics:
+      - Commits this week: ${metrics.commitStats.commits_this_week} (this month: ${metrics.commitStats.commits_this_month})
+      - Pull Requests: Open: ${metrics.prStats.opened}, Merged: ${metrics.prStats.merged}, Closed: ${metrics.prStats.closed}
+      - Top Repositories: ${metrics.repos.slice(0, 3).map(r => `${r.name} (${r.language || 'No Lang'})`).join(', ')}
+      - Daily Commit Trend: ${metrics.dailyCommits.map(d => `${d.day}:${d.commits}`).join(', ')}
+      - Hourly Activity: ${metrics.activeHours.map(h => `${h.hour}:${h.commits}`).join(', ')}
+
+      Generate 4 concise, action-oriented bullet points containing insights or suggestions on how the developer can optimize their workflow, avoid fatigue, address bottlenecks, or leverage their strengths. Use Markdown formatting. Ensure each point is highly specific to the metrics.
+    `;
+
+    if (provider === 'gemini') {
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          contents: [{ parts: [{ text: prompt }] }],
+        }
+      );
+
+      const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (content) {
+        let bullets = content
+          .split('\n')
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.startsWith('-') || line.startsWith('*') || /^\d+\.\s/.test(line))
+          .map((line: string) => line.replace(/^-\s*/, '').replace(/^\*\s*/, '').replace(/^\d+\.\s*/, '').trim())
+          .filter((line: string) => line.length > 0);
+
+        if (bullets.length === 0) {
+          bullets = content
+            .split('\n')
+            .map((line: string) => line.replace(/^-\s*/, '').replace(/^\*\s*/, '').trim())
+            .filter((line: string) => line.length > 0);
+        }
+        return bullets;
+      }
+    } else if (provider === 'openai') {
       const openai = new OpenAI({ apiKey });
-      const prompt = `
-        You are a seasoned developer productivity coach. Analyze these GitHub activity metrics:
-        - Commits this week: ${metrics.commitStats.commits_this_week} (this month: ${metrics.commitStats.commits_this_month})
-        - Pull Requests: Open: ${metrics.prStats.opened}, Merged: ${metrics.prStats.merged}, Closed: ${metrics.prStats.closed}
-        - Top Repositories: ${metrics.repos.slice(0, 3).map(r => `${r.name} (${r.language || 'No Lang'})`).join(', ')}
-        - Daily Commit Trend: ${metrics.dailyCommits.map(d => `${d.day}:${d.commits}`).join(', ')}
-        - Hourly Activity: ${metrics.activeHours.map(h => `${h.hour}:${h.commits}`).join(', ')}
-
-        Generate 4 concise, action-oriented bullet points containing insights or suggestions on how the developer can optimize their workflow, avoid fatigue, address bottlenecks, or leverage their strengths. Use Markdown formatting. Ensure each point is highly specific to the metrics.
-      `;
-
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
@@ -42,16 +71,24 @@ export const generateInsights = async (metrics: MetricsPayload): Promise<string[
 
       const content = response.choices[0]?.message?.content;
       if (content) {
-        // Parse bullets
-        const bullets = content
+        let bullets = content
           .split('\n')
-          .map(line => line.replace(/^-\s*/, '').replace(/^\*\s*/, '').trim())
-          .filter(line => line.length > 0);
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.startsWith('-') || line.startsWith('*') || /^\d+\.\s/.test(line))
+          .map((line: string) => line.replace(/^-\s*/, '').replace(/^\*\s*/, '').replace(/^\d+\.\s*/, '').trim())
+          .filter((line: string) => line.length > 0);
+
+        if (bullets.length === 0) {
+          bullets = content
+            .split('\n')
+            .map((line: string) => line.replace(/^-\s*/, '').replace(/^\*\s*/, '').trim())
+            .filter((line: string) => line.length > 0);
+        }
         return bullets;
       }
     }
     
-    // Default fallback if OpenAI fails or provider is unrecognized
+    // Default fallback if provider is unrecognized or does not return content
     return generateHeuristicInsights(metrics);
   } catch (error: any) {
     console.error('Failed to generate AI insights via API:', error.message);
